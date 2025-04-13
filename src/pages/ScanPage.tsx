@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { MicIcon, StopCircleIcon, ListIcon, ChevronLeftIcon, Loader2Icon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const ScanPage = () => {
   const navigate = useNavigate();
@@ -19,13 +19,13 @@ const ScanPage = () => {
   const [noiseLevel, setNoiseLevel] = useState<number | null>(null);
   const [issueType, setIssueType] = useState<string | undefined>();
   const [location, setLocation] = useState<{lat: number; lng: number} | null>(null);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    // Get user's location
     navigator.geolocation.getCurrentPosition(
       position => {
         setLocation({
@@ -40,7 +40,6 @@ const ScanPage = () => {
     );
 
     return () => {
-      // Clean up audio context
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
@@ -52,26 +51,21 @@ const ScanPage = () => {
 
   const startScanning = async () => {
     try {
-      // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       microphoneStreamRef.current = stream;
 
-      // Initialize audio context
       const audioContext = new AudioContext();
       audioContextRef.current = audioContext;
 
-      // Create analyser node
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       analyserRef.current = analyser;
 
-      // Connect microphone to analyser
       const microphone = audioContext.createMediaStreamSource(stream);
       microphone.connect(analyser);
 
       setIsScanning(true);
       
-      // Start analyzing audio
       analyzeAudio();
     } catch (error) {
       console.error("Error accessing microphone:", error);
@@ -86,59 +80,67 @@ const ScanPage = () => {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    // Get frequency data
     analyser.getByteFrequencyData(dataArray);
     
-    // Calculate average level
     let sum = 0;
     for (let i = 0; i < bufferLength; i++) {
       sum += dataArray[i];
     }
     const avg = sum / bufferLength;
     
-    // Convert to decibel-like scale (simplified)
     const dB = Math.round((avg / 256) * 100);
     setNoiseLevel(dB);
     
-    // Continue analyzing
     requestAnimationFrame(analyzeAudio);
   };
 
   const stopScanning = () => {
     setIsScanning(false);
     
-    // Stop microphone
     if (microphoneStreamRef.current) {
       microphoneStreamRef.current.getTracks().forEach(track => track.stop());
     }
     
-    // Close audio context
     if (audioContextRef.current) {
       audioContextRef.current.close();
     }
   };
 
-  const submitReport = () => {
+  const submitReport = async () => {
     if (!location || !noiseLevel || !issueType) {
       toast.error("Please select an issue type before submitting.");
       return;
     }
 
-    // In a real app, this would send data to a backend/Supabase
-    const reportData = {
-      noiseLevel,
-      issueType,
-      location,
-      timestamp: new Date().toISOString()
-    };
-    
-    console.log("Submitting report:", reportData);
-    
-    toast.success("Environmental report submitted!");
-    setTimeout(() => navigate('/map'), 1000);
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('environmental_reports')
+        .insert({
+          type: issueType,
+          level: noiseLevel,
+          lat: location.lat,
+          lng: location.lng,
+          description: noiseLevel ? `Noise level: ${noiseLevel} dB` : null
+        });
+
+      if (error) throw error;
+
+      toast.success("Environmental report submitted!");
+      
+      setNoiseLevel(null);
+      setIssueType(undefined);
+      
+      setTimeout(() => navigate('/map'), 1000);
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      toast.error("Failed to submit report. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Helper function to get noise level description
   const getNoiseLevelDescription = (level: number | null) => {
     if (level === null) return "Not measuring";
     if (level < 30) return "Low";
@@ -146,7 +148,6 @@ const ScanPage = () => {
     return "High";
   };
 
-  // Helper function to get noise level color
   const getNoiseLevelColor = (level: number | null) => {
     if (level === null) return "bg-gray-300";
     if (level < 30) return "bg-green-500";
@@ -226,10 +227,10 @@ const ScanPage = () => {
         <div className="flex justify-center">
           <Button 
             onClick={submitReport}
-            disabled={!noiseLevel || !issueType || !location}
+            disabled={!noiseLevel || !issueType || !location || isSubmitting}
             className="w-full py-6 text-lg bg-eco-blue hover:bg-blue-600"
           >
-            Submit Report
+            {isSubmitting ? 'Submitting...' : 'Submit Report'}
           </Button>
         </div>
         

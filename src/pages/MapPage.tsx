@@ -6,6 +6,7 @@ import { ChevronLeftIcon, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { supabase } from '@/integrations/supabase/client';
 
 // Fix Leaflet icon issues
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -110,10 +111,22 @@ const getTypeBadgeColor = (type: string) => {
 
 const MapPage = () => {
   const navigate = useNavigate();
-  const [reports, setReports] = useState(mockReports);
+  const [reports, setReports] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   useEffect(() => {
+    // Fetch initial reports
+    const fetchReports = async () => {
+      const { data, error } = await supabase
+        .from('environmental_reports')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (data) setReports(data);
+      if (error) console.error("Error fetching reports:", error);
+    };
+
+    // Get user's location
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setUserLocation([position.coords.latitude, position.coords.longitude]);
@@ -122,6 +135,29 @@ const MapPage = () => {
         console.error("Error getting location:", error);
       }
     );
+
+    fetchReports();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('environmental_reports')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'environmental_reports' 
+        },
+        (payload) => {
+          setReports((prevReports) => [payload.new, ...prevReports]);
+        }
+      )
+      .subscribe();
+
+    // Cleanup function
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const formatDate = (dateString: string) => {

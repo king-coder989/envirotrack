@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,9 @@ const createMarkerIcon = (color: string) => {
     popupAnchor: [0, -10],
   });
 };
+
+// Mumbai, India coordinates
+const MUMBAI_COORDINATES = [19.076, 72.8777];
 
 // Example data - in a real app, this would come from Supabase
 const mockReports = [
@@ -165,7 +169,8 @@ const MapPage = () => {
     return date.toLocaleString();
   };
 
-  const initialPosition: [number, number] = userLocation || [40.712776, -74.005974];
+  // Set initialPosition to Mumbai if userLocation is null
+  const initialPosition: [number, number] = userLocation || MUMBAI_COORDINATES;
 
   return (
     <div className="h-screen flex flex-col">
@@ -192,7 +197,7 @@ const MapPage = () => {
       <div className="flex-grow relative">
         <MapContainer 
           center={initialPosition} 
-          zoom={14} 
+          zoom={12} 
           className="h-full w-full z-0"
         >
           <TileLayer

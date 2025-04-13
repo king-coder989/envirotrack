@@ -12,7 +12,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col items-center justify-between p-4 bg-gradient-to-b from-green-50 to-blue-50">
       <div className="w-full max-w-md flex flex-col items-center mt-12">
         <EcoLogo className="w-24 h-24 mb-6" />
-        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">EcoLocate</h1>
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">EnviroTrack</h1>
         <p className="text-center text-gray-600 mb-12">
           Monitor and report environmental issues in your community
         </p>

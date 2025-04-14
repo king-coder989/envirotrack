@@ -1,5 +1,5 @@
 
-# Envirotrack 🌍
+# EnviroTrack 🌍
 > Real-time environmental monitoring using community reports
 
 Imagine if our city could detect pollution hotspots in real time using affordable sensors and predictive alerts—enabling immediate action. This is what smart cities need to fight urban pollution. Our solution supports Engineering & Environmental Solutions Pvt. Ltd. in delivering scalable, low-cost monitoring—empowering communities with data, and aligning with Smart City Development and Community Empowerment tracks.

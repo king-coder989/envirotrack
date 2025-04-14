@@ -29,7 +29,7 @@ const createMarkerIcon = (color: string) => {
 };
 
 // Mumbai, India coordinates
-const MUMBAI_COORDINATES = [19.076, 72.8777];
+const MUMBAI_COORDINATES: [number, number] = [19.076, 72.8777];
 
 // Example data - in a real app, this would come from Supabase
 const mockReports = [

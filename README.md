@@ -1,3 +1,4 @@
+
 # Envirotrack 🌍
 > Real-time environmental monitoring using community reports
 
@@ -14,9 +15,9 @@ Imagine if our city could detect pollution hotspots in real time using affordabl
 3. Data appears on the public map
 
 ## Tech Stack
-- Frontend: React Native (Expo)
+- Frontend: React with TypeScript
 - Backend: Supabase
-- Mapping: Mapbox GL JS
+- Mapping: Leaflet
 
   ## 🔥 Our Ambition
 **This MVP is just the beginning** - we're building the foundation for:
@@ -33,3 +34,4 @@ flowchart LR
 git clone https://github.com/your-username/envirotrack.git
 npm install
 npm start
+```
